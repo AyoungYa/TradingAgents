@@ -8,9 +8,38 @@ load_dotenv()
 
 # Create a custom config
 config = DEFAULT_CONFIG.copy()
-config["deep_think_llm"] = "gpt-5.4-mini"  # Use a different model
-config["quick_think_llm"] = "gpt-5.4-mini"  # Use a different model
+config["llm_provider"] = "deepseek"
+config['output_language'] = ""
+config["backend_url"] = "https://api.deepseek.com/v1"
+config["deep_think_llm"] = "deepseek-reasoner"  # Use a different model
+config["quick_think_llm"] = "deepseek-chat"  # Use a different model
 config["max_debate_rounds"] = 1  # Increase debate rounds
+
+selections = {
+    # "ticker": "601899.SH",
+    # "analysis_date": "2026-04-22",
+    "analysts": ["market", "social", "news", "fundamentals"],
+    "research_depth": 3,
+    "llm_provider": "deepseek",
+    "backend_url": "https://api.deepseek.com",
+    "shallow_thinker": "deepseek-chat",
+    "deep_thinker": "deepseek-reasoner",
+    "google_thinking_level": None,
+    "openai_reasoning_effort": None,
+    "anthropic_effort": None,
+    "output_language": "Chinese"
+}
+config["max_debate_rounds"] = selections["research_depth"]
+config["max_risk_discuss_rounds"] = selections["research_depth"]
+config["quick_think_llm"] = selections["shallow_thinker"]
+config["deep_think_llm"] = selections["deep_thinker"]
+config["backend_url"] = selections["backend_url"]
+config["llm_provider"] = selections["llm_provider"].lower()
+# Provider-specific thinking configuration
+config["google_thinking_level"] = selections.get("google_thinking_level")
+config["openai_reasoning_effort"] = selections.get("openai_reasoning_effort")
+config["anthropic_effort"] = selections.get("anthropic_effort")
+config["output_language"] = selections.get("output_language", "English")
 
 # Configure data vendors (default uses yfinance, no extra API keys needed)
 config["data_vendors"] = {
