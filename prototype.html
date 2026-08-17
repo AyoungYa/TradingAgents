@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="color-scheme: dark;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0e1a">
+<title>TradingAgents - Multi-Agent LLM Trading Platform</title>
+<!-- Skip Link for Accessibility -->
+<a href="#main-content" class="skip-link">跳转到主要内容</a>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: rgba(17, 24, 39, 0.7);
+  --bg-glass: rgba(17, 24, 39, 0.5);
+  --accent: #00d4aa;
+  --accent-dim: rgba(0, 212, 170, 0.15);
+  --accent-glow: rgba(0, 212, 170, 0.3);
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --success: #10b981;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: rgba(148, 163, 184, 0.1);
+  --border-accent: rgba(0, 212, 170, 0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Skip Link - Visually Hidden but accessible */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--accent);
+  color: var(--bg-primary);
+  padding: 8px 16px;
+  z-index: 9999;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+  text-decoration: none;
+  transition: top 0.3s;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Focus Visible States */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Touch optimization */
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-pulse-glow,
+  .animate-pulse-dot,
+  .animate-spin-slow {
+    animation: none !important;
+  }
+}
+
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.4); }
+
+/* Glass Card */
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+.glass-card:hover {
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Navigation */
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 10px;
+  color: var(--text-secondary); cursor: pointer;
+  transition: all 0.2s ease; font-size: 14px; font-weight: 500;
+}
+.nav-item:hover { color: var(--text-primary); background: rgba(148,163,184,0.08); }
+.nav-item.active {
+  color: var(--accent); background: var(--accent-dim);
+  box-shadow: 0 0 20px rgba(0,212,170,0.05);
+}
+
+/* Stat Card */
+.stat-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.stat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+
+/* Pulse Animation */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,170,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(0,212,170,0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes progress-bar {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-pulse-glow { animation: pulse-glow 2s infinite; }
+.animate-pulse-dot { animation: pulse-dot 1.5s infinite; }
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
+.animate-slide-up { animation: slide-up 0.5s ease-out forwards; }
+.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+
+/* Agent Status */
+.agent-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+}
+.status-pending { background: rgba(100,116,139,0.2); color: #94a3b8; }
+.status-in_progress { background: rgba(0,212,170,0.15); color: #00d4aa; }
+.status-completed { background: rgba(16,185,129,0.15); color: #10b981; }
+
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.status-pending .status-dot { background: #64748b; }
+.status-in_progress .status-dot { background: #00d4aa; animation: pulse-dot 1.5s infinite; }
+.status-completed .status-dot { background: #10b981; }
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, #00d4aa, #00b894);
+  color: #0a0e1a; font-weight: 600; padding: 10px 24px;
+  border-radius: 10px; border: none; cursor: pointer;
+  transition: all 0.2s ease; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,170,0.3); }
+
+.btn-secondary {
+  background: rgba(148,163,184,0.1); color: var(--text-primary);
+  font-weight: 500; padding: 10px 24px; border-radius: 10px;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all 0.2s ease; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-secondary:hover { background: rgba(148,163,184,0.15); border-color: rgba(148,163,184,0.3); }
+
+/* Step Form */
+.step-indicator {
+  display: flex; align-items: center; gap: 0;
+}
+.step-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600;
+  border: 2px solid var(--border); color: var(--text-muted);
+  transition: all 0.3s ease; position: relative; z-index: 1;
+  background: var(--bg-primary);
+}
+.step-dot.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.step-dot.completed { border-color: var(--success); color: white; background: var(--success); }
+.step-line {
+  width: 40px; height: 2px; background: var(--border); transition: background 0.3s;
+}
+.step-line.completed { background: var(--success); }
+
+/* Checkbox Card */
+.check-card {
+  background: var(--bg-glass); border: 2px solid var(--border);
+  border-radius: 14px; padding: 20px; cursor: pointer;
+  transition: all 0.2s ease; text-align: center;
+}
+.check-card:hover { border-color: rgba(148,163,184,0.3); }
+.check-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+
+/* Depth Card */
+.depth-card {
+  background: var(--bg-glass); border: 2px solid var(--border);
+  border-radius: 14px; padding: 24px; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.depth-card:hover { border-color: rgba(148,163,184,0.3); }
+.depth-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+
+/* Message Flow */
+.msg-item {
+  padding: 10px 14px; border-radius: 10px;
+  font-size: 13px; line-height: 1.5;
+  animation: slide-up 0.3s ease-out;
+}
+.msg-tool { background: rgba(99,102,241,0.1); border-left: 3px solid #6366f1; }
+.msg-agent { background: rgba(0,212,170,0.08); border-left: 3px solid var(--accent); }
+.msg-data { background: rgba(245,158,11,0.08); border-left: 3px solid var(--warning); }
+.msg-system { background: rgba(148,163,184,0.08); border-left: 3px solid var(--text-muted); }
+
+/* Collapsible */
+.collapsible-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; cursor: pointer; border-radius: 12px;
+  transition: background 0.2s;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+.collapsible-header:hover { background: rgba(148,163,184,0.05); }
+.collapsible-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.collapsible-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.collapsible-body.open { max-height: 5000px; }
+
+/* Signal Card */
+.signal-buy { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05)); border: 2px solid rgba(16,185,129,0.4); }
+.signal-hold { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05)); border: 2px solid rgba(245,158,11,0.4); }
+.signal-sell { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05)); border: 2px solid rgba(239,68,68,0.4); }
+
+/* Tab */
+.tab-btn {
+  padding: 8px 18px; border-radius: 8px; font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: all 0.2s;
+  color: var(--text-secondary); background: transparent; border: none;
+}
+.tab-btn:hover { color: var(--text-primary); background: rgba(148,163,184,0.08); }
+.tab-btn.active { color: var(--accent); background: var(--accent-dim); }
+
+/* Input */
+.input-field {
+  background: rgba(148,163,184,0.08); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; color: var(--text-primary);
+  font-size: 14px; width: 100%; outline: none; transition: all 0.2s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,170,0.1); }
+.input-field::placeholder { color: var(--text-muted); }
+
+/* Select */
+select.input-field { appearance: none; cursor: pointer; }
+
+/* Toggle */
+.toggle-switch {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: rgba(100,116,139,0.3); cursor: pointer;
+  position: relative; transition: background 0.3s;
+  border: none;
+  padding: 0;
+}
+.toggle-switch.active { background: var(--accent); }
+.toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white; transition: transform 0.3s;
+}
+.toggle-switch.active::after { transform: translateX(20px); }
+.toggle-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 4px; border-radius: 2px; background: rgba(148,163,184,0.1);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), #00b894);
+  transition: width 0.5s ease;
+}
+
+/* Table */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.data-table th {
+  text-align: left; padding: 12px 16px; font-size: 12px;
+  font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 14px 16px; font-size: 14px;
+  border-bottom: 1px solid rgba(148,163,184,0.05);
+}
+.data-table tr:hover td { background: rgba(148,163,184,0.03); }
+
+/* Badge */
+.badge {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: 6px; font-size: 12px; font-weight: 600;
+}
+.badge-buy { background: rgba(16,185,129,0.15); color: #10b981; }
+.badge-hold { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.badge-sell { background: rgba(239,68,68,0.15); color: #ef4444; }
+.badge-completed { background: rgba(16,185,129,0.15); color: #10b981; }
+.badge-running { background: rgba(99,102,241,0.15); color: #818cf8; }
+.badge-failed { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+/* Shimmer loading */
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(148,163,184,0.05) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Page transitions */
+.page { display: none; animation: fade-in 0.3s ease-out; }
+.page.active { display: block; }
+
+/* Autocomplete */
+.autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 10px; margin-top: 4px; z-index: 50;
+  max-height: 200px; overflow-y: auto; display: none;
+}
+.autocomplete-list.show { display: block; }
+.autocomplete-item {
+  padding: 10px 16px; cursor: pointer; font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: background 0.15s;
+}
+.autocomplete-item:hover { background: rgba(148,163,184,0.08); }
+
+/* Sidebar */
+.sidebar {
+  width: 260px; height: 100vh; position: fixed;
+  left: 0; top: 0; background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 40;
+}
+.main-content {
+  margin-left: 260px; min-height: 100vh;
+  padding: 24px 32px;
+}
+
+/* Report markdown */
+.report-content h1 { font-size: 24px; font-weight: 700; margin: 20px 0 12px; color: var(--text-primary); text-wrap: balance; }
+.report-content h2 { font-size: 20px; font-weight: 600; margin: 16px 0 10px; color: var(--text-primary); text-wrap: balance; }
+.report-content h3 { font-size: 16px; font-weight: 600; margin: 12px 0 8px; color: var(--text-primary); text-wrap: balance; }
+.report-content p { font-size: 14px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 12px; }
+.report-content ul { padding-left: 20px; margin-bottom: 12px; }
+.report-content li { font-size: 14px; line-height: 1.8; color: var(--text-secondary); }
+.report-content strong { color: var(--text-primary); }
+.report-content code { font-family: 'JetBrains Mono', monospace; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.report-content blockquote { border-left: 3px solid var(--accent); padding-left: 16px; margin: 12px 0; color: var(--text-secondary); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sidebar { width: 72px; }
+  .sidebar .nav-text, .sidebar .logo-text, .sidebar .user-info { display: none; }
+  .sidebar .nav-item { justify-content: center; padding: 12px; }
+  .main-content { margin-left: 72px; padding: 16px; }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar">
+  <div style="padding: 20px 20px 8px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#00d4aa,#00b894);display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-chart-line" style="color:#0a0e1a;font-size:16px;"></i>
+      </div>
+      <div class="logo-text">
+        <div style="font-weight:700;font-size:16px;color:var(--text-primary);">TradingAgents</div>
+        <div style="font-size:11px;color:var(--text-muted);">Multi-Agent Platform</div>
+      </div>
+    </div>
+  </div>
+
+  <nav style="padding:12px;flex:1;" aria-label="主导航">
+    <div style="margin-bottom:8px;padding:0 8px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;" class="nav-text">Main</div>
+    <button class="nav-item active" onclick="switchPage('dashboard')" aria-label="仪表盘" aria-current="page">
+      <i class="fas fa-th-large" style="width:18px;text-align:center;" aria-hidden="true"></i>
+      <span class="nav-text">仪表盘</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('new-analysis')" aria-label="新建分析">
+      <i class="fas fa-plus-circle" style="width:18px;text-align:center;" aria-hidden="true"></i>
+      <span class="nav-text">新建分析</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('live-analysis')" aria-label="实时分析">
+      <i class="fas fa-play-circle" style="width:18px;text-align:center;" aria-hidden="true"></i>
+      <span class="nav-text">实时分析</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('report')" aria-label="分析报告">
+      <i class="fas fa-file-alt" style="width:18px;text-align:center;" aria-hidden="true"></i>
+      <span class="nav-text">分析报告</span>
+    </button>
+
+    <div style="margin:16px 0 8px;padding:0 8px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;" class="nav-text">Manage</div>
+    <button class="nav-item" onclick="switchPage('history')" aria-label="历史报告">
+      <i class="fas fa-history" style="width:18px;text-align:center;" aria-hidden="true"></i>
+      <span class="nav-text">历史报告</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('settings')" aria-label="系统设置">
+      <i class="fas fa-cog" style="width:18px;text-align:center;" aria-hidden="true"></i>
+      <span class="nav-text">系统设置</span>
+    </button>
+  </nav>
+
+  <div style="padding:16px;border-top:1px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;">A</div>
+      <div class="user-info">
+        <div style="font-size:13px;font-weight:600;">Admin</div>
+        <div style="font-size:11px;color:var(--text-muted);">Pro Plan</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content" id="main-content" role="main" aria-label="主内容区域">
+
+<!-- ==================== PAGE 1: DASHBOARD ==================== -->
+<div id="page-dashboard" class="page active">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">仪表盘</h1>
+      <p style="color:var(--text-secondary);font-size:14px;">欢迎回来，这是您的交易分析概览</p>
+    </div>
+    <button class="btn-primary" onclick="switchPage('new-analysis')">
+      <i class="fas fa-plus"></i> 新建分析
+    </button>
+  </div>
+
+  <!-- Stat Cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:28px;">
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">总分析次数</div>
+          <div class="font-mono" style="font-size:32px;font-weight:700;">247</div>
+          <div style="font-size:12px;color:var(--success);margin-top:8px;"><i class="fas fa-arrow-up"></i> 12.5% 较上月</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-chart-bar" style="color:var(--accent);font-size:18px;"></i>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">本月分析</div>
+          <div class="font-mono" style="font-size:32px;font-weight:700;">38</div>
+          <div style="font-size:12px;color:var(--success);margin-top:8px;"><i class="fas fa-arrow-up"></i> 8.3% 较上月</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-calendar-check" style="color:#818cf8;font-size:18px;"></i>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">活跃策略</div>
+          <div class="font-mono" style="font-size:32px;font-weight:700;">12</div>
+          <div style="font-size:12px;color:var(--warning);margin-top:8px;"><i class="fas fa-minus"></i> 持平</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-chess-knight" style="color:var(--warning);font-size:18px;"></i>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">平均耗时</div>
+          <div class="font-mono" style="font-size:32px;font-weight:700;">4.2<span style="font-size:16px;color:var(--text-muted);">min</span></div>
+          <div style="font-size:12px;color:var(--success);margin-top:8px;"><i class="fas fa-arrow-down"></i> 15% 更快</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-clock" style="color:#ec4899;font-size:18px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Analysis Table -->
+  <div class="glass-card" style="padding:0;overflow:hidden;">
+    <div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
+      <h2 style="font-size:16px;font-weight:600;">最近分析</h2>
+      <button class="btn-secondary" onclick="switchPage('history')" style="padding:6px 14px;font-size:13px;">
+        查看全部 <i class="fas fa-arrow-right" style="font-size:11px;"></i>
+      </button>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>股票代码</th>
+          <th>分析日期</th>
+          <th>最终决策</th>
+          <th>信号强度</th>
+          <th>状态</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="font-mono" style="font-weight:600;">NVDA</span> <span style="color:var(--text-muted);font-size:12px;">NVIDIA Corp</span></td>
+          <td style="color:var(--text-secondary);">2026-04-22</td>
+          <td><span class="badge badge-buy">BUY</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar" style="width:80px;"><div class="progress-bar-fill" style="width:87%;"></div></div>
+              <span class="font-mono" style="font-size:13px;color:var(--success);">87%</span>
+            </div>
+          </td>
+          <td><span class="badge badge-completed">已完成</span></td>
+          <td><button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="switchPage('report')">查看</button></td>
+        </tr>
+        <tr>
+          <td><span class="font-mono" style="font-weight:600;">AAPL</span> <span style="color:var(--text-muted);font-size:12px;">Apple Inc</span></td>
+          <td style="color:var(--text-secondary);">2026-04-21</td>
+          <td><span class="badge badge-hold">HOLD</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar" style="width:80px;"><div class="progress-bar-fill" style="width:62%;background:linear-gradient(90deg,#f59e0b,#d97706);"></div></div>
+              <span class="font-mono" style="font-size:13px;color:var(--warning);">62%</span>
+            </div>
+          </td>
+          <td><span class="badge badge-completed">已完成</span></td>
+          <td><button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="switchPage('report')">查看</button></td>
+        </tr>
+        <tr>
+          <td><span class="font-mono" style="font-weight:600;">TSLA</span> <span style="color:var(--text-muted);font-size:12px;">Tesla Inc</span></td>
+          <td style="color:var(--text-secondary);">2026-04-20</td>
+          <td><span class="badge badge-sell">SELL</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar" style="width:80px;"><div class="progress-bar-fill" style="width:74%;background:linear-gradient(90deg,#ef4444,#dc2626);"></div></div>
+              <span class="font-mono" style="font-size:13px;color:var(--danger);">74%</span>
+            </div>
+          </td>
+          <td><span class="badge badge-completed">已完成</span></td>
+          <td><button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="switchPage('report')">查看</button></td>
+        </tr>
+        <tr>
+          <td><span class="font-mono" style="font-weight:600;">MSFT</span> <span style="color:var(--text-muted);font-size:12px;">Microsoft Corp</span></td>
+          <td style="color:var(--text-secondary);">2026-04-19</td>
+          <td><span class="badge badge-buy">BUY</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar" style="width:80px;"><div class="progress-bar-fill" style="width:91%;"></div></div>
+              <span class="font-mono" style="font-size:13px;color:var(--success);">91%</span>
+            </div>
+          </td>
+          <td><span class="badge badge-completed">已完成</span></td>
+          <td><button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="switchPage('report')">查看</button></td>
+        </tr>
+        <tr>
+          <td><span class="font-mono" style="font-weight:600;">GOOGL</span> <span style="color:var(--text-muted);font-size:12px;">Alphabet Inc</span></td>
+          <td style="color:var(--text-secondary);">2026-04-18</td>
+          <td><span class="badge badge-buy">BUY</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-bar" style="width:80px;"><div class="progress-bar-fill" style="width:79%;"></div></div>
+              <span class="font-mono" style="font-size:13px;color:var(--success);">79%</span>
+            </div>
+          </td>
+          <td><span class="badge badge-running">运行中</span></td>
+          <td><button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="switchPage('live-analysis')">查看</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== PAGE 2: NEW ANALYSIS ==================== -->
+<div id="page-new-analysis" class="page">
+  <div style="max-width:720px;margin:0 auto;">
+    <div style="margin-bottom:32px;">
+      <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">新建分析</h1>
+      <p style="color:var(--text-secondary);font-size:14px;">配置分析参数，启动多 Agent 协作分析</p>
+    </div>
+
+    <!-- Step Indicators -->
+    <div class="step-indicator" style="justify-content:center;margin-bottom:36px;" id="step-indicators">
+      <div class="step-dot active" data-step="1">1</div><div class="step-line"></div>
+      <div class="step-dot" data-step="2">2</div><div class="step-line"></div>
+      <div class="step-dot" data-step="3">3</div><div class="step-line"></div>
+      <div class="step-dot" data-step="4">4</div><div class="step-line"></div>
+      <div class="step-dot" data-step="5">5</div><div class="step-line"></div>
+      <div class="step-dot" data-step="6">6</div><div class="step-line"></div>
+      <div class="step-dot" data-step="7">7</div><div class="step-line"></div>
+      <div class="step-dot" data-step="8">8</div>
+    </div>
+
+    <!-- Step Content -->
+    <div class="glass-card" style="padding:32px;min-height:360px;" id="step-container">
+
+      <!-- Step 1: Stock Ticker -->
+      <div class="step-content" id="step-1">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">股票代码</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">输入要分析的股票代码</p>
+        <div style="position:relative;">
+          <input type="text" class="input-field font-mono" id="stock-input" placeholder="例如: AAPL, NVDA, TSLA..." style="font-size:18px;padding:16px 20px;" oninput="showAutocomplete(this.value)" onfocus="showAutocomplete(this.value)">
+          <div class="autocomplete-list" id="autocomplete-list"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--text-muted);margin-right:4px;line-height:28px;">热门:</span>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('NVDA')">NVDA</button>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('AAPL')">AAPL</button>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('TSLA')">TSLA</button>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('MSFT')">MSFT</button>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('GOOGL')">GOOGL</button>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('AMZN')">AMZN</button>
+          <button class="btn-secondary" style="padding:4px 12px;font-size:12px;" onclick="selectStock('META')">META</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Date -->
+      <div class="step-content" id="step-2" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">分析日期</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">选择分析的目标日期</p>
+        <div style="display:grid;gap:12px;">
+          <label style="display:flex;align-items:center;gap:12px;padding:16px;border-radius:12px;border:1px solid var(--border);cursor:pointer;" onclick="document.getElementById('date-today').checked=true">
+            <input type="radio" name="analysis-date" id="date-today" value="today" checked style="accent-color:var(--accent);">
+            <div>
+              <div style="font-weight:500;">今天</div>
+              <div style="font-size:13px;color:var(--text-muted);" class="font-mono">2026-04-23</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;padding:16px;border-radius:12px;border:1px solid var(--border);cursor:pointer;" onclick="document.getElementById('date-yesterday').checked=true">
+            <input type="radio" name="analysis-date" id="date-yesterday" value="yesterday" style="accent-color:var(--accent);">
+            <div>
+              <div style="font-weight:500;">昨天</div>
+              <div style="font-size:13px;color:var(--text-muted);" class="font-mono">2026-04-22</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;padding:16px;border-radius:12px;border:1px solid var(--border);cursor:pointer;" onclick="document.getElementById('date-custom').checked=true">
+            <input type="radio" name="analysis-date" id="date-custom" value="custom" style="accent-color:var(--accent);">
+            <div style="flex:1;">
+              <div style="font-weight:500;">自定义日期</div>
+              <input type="date" class="input-field" style="margin-top:8px;max-width:220px;" value="2026-04-23">
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Step 3: Language -->
+      <div class="step-content" id="step-3" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">输出语言</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">选择分析报告的输出语言</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="depth-card selected" onclick="selectLang(this,'en')">
+            <div style="font-size:28px;margin-bottom:8px;">🇺🇸</div>
+            <div style="font-weight:600;">English</div>
+          </div>
+          <div class="depth-card" onclick="selectLang(this,'zh')">
+            <div style="font-size:28px;margin-bottom:8px;">🇨🇳</div>
+            <div style="font-weight:600;">中文</div>
+          </div>
+          <div class="depth-card" onclick="selectLang(this,'ja')">
+            <div style="font-size:28px;margin-bottom:8px;">🇯🇵</div>
+            <div style="font-weight:600;">日本語</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Analyst Team -->
+      <div class="step-content" id="step-4" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">分析师团队</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">选择参与分析的分析师类型</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+          <div class="check-card selected" onclick="toggleCheck(this)">
+            <i class="fas fa-chart-line" style="font-size:28px;color:var(--accent);margin-bottom:12px;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:4px;">Market Analyst</div>
+            <div style="font-size:13px;color:var(--text-muted);">技术分析、价格趋势、交易量</div>
+          </div>
+          <div class="check-card selected" onclick="toggleCheck(this)">
+            <i class="fas fa-users" style="font-size:28px;color:#818cf8;margin-bottom:12px;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:4px;">Social Media Analyst</div>
+            <div style="font-size:13px;color:var(--text-muted);">社交媒体情绪、舆情分析</div>
+          </div>
+          <div class="check-card selected" onclick="toggleCheck(this)">
+            <i class="fas fa-newspaper" style="font-size:28px;color:var(--warning);margin-bottom:12px;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:4px;">News Analyst</div>
+            <div style="font-size:13px;color:var(--text-muted);">新闻事件、公告、行业动态</div>
+          </div>
+          <div class="check-card selected" onclick="toggleCheck(this)">
+            <i class="fas fa-balance-scale" style="font-size:28px;color:#ec4899;margin-bottom:12px;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:4px;">Fundamentals Analyst</div>
+            <div style="font-size:13px;color:var(--text-muted);">财务报表、估值、基本面</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Research Depth -->
+      <div class="step-content" id="step-5" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">研究深度</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">选择分析的研究深度级别</p>
+        <div style="display:grid;gap:16px;">
+          <div class="depth-card" onclick="selectDepth(this,'shallow')" style="display:flex;align-items:center;gap:20px;">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-bolt" style="color:#10b981;font-size:22px;"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;margin-bottom:4px;">Shallow <span style="font-size:12px;color:var(--text-muted);font-weight:400;">快速扫描</span></div>
+              <div style="font-size:13px;color:var(--text-secondary);">基础数据收集和快速分析，适合日常快速决策。预计耗时 2-3 分钟。</div>
+            </div>
+          </div>
+          <div class="depth-card selected" onclick="selectDepth(this,'medium')" style="display:flex;align-items:center;gap:20px;">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-search" style="color:#818cf8;font-size:22px;"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;margin-bottom:4px;">Medium <span style="font-size:12px;color:var(--text-muted);font-weight:400;">标准分析</span></div>
+              <div style="font-size:13px;color:var(--text-secondary);">全面数据收集和多维度分析，适合大多数投资决策。预计耗时 4-6 分钟。</div>
+            </div>
+          </div>
+          <div class="depth-card" onclick="selectDepth(this,'deep')" style="display:flex;align-items:center;gap:20px;">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-microscope" style="color:#ec4899;font-size:22px;"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;margin-bottom:4px;">Deep <span style="font-size:12px;color:var(--text-muted);font-weight:400;">深度研究</span></div>
+              <div style="font-size:13px;color:var(--text-secondary);">极致深度分析，包含历史回测和详细推理。适合重大投资决策。预计耗时 8-12 分钟。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: LLM Provider -->
+      <div class="step-content" id="step-6" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">LLM Provider</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">选择大语言模型提供商</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+          <div class="depth-card selected" onclick="selectProvider(this,'openai')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#10b981;"></i></div>
+              <div style="font-weight:600;">OpenAI</div>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">GPT-4o, GPT-4o-mini</div>
+          </div>
+          <div class="depth-card" onclick="selectProvider(this,'google')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-cloud" style="color:#818cf8;"></i></div>
+              <div style="font-weight:600;">Google</div>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">Gemini 2.5 Pro, Gemini Flash</div>
+          </div>
+          <div class="depth-card" onclick="selectProvider(this,'anthropic')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-shield-alt" style="color:var(--warning);"></i></div>
+              <div style="font-weight:600;">Anthropic</div>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">Claude 4 Sonnet, Claude Haiku</div>
+          </div>
+          <div class="depth-card" onclick="selectProvider(this,'deepseek')">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-atom" style="color:#ec4899;"></i></div>
+              <div style="font-weight:600;">DeepSeek</div>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">DeepSeek-V3, DeepSeek-R1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7: Model Selection -->
+      <div class="step-content" id="step-7" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">模型选择</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">分别为快速思考和深度思考选择模型</p>
+        <div style="display:grid;gap:20px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">
+              <i class="fas fa-bolt" style="color:var(--warning);"></i> Quick-thinking Model
+            </div>
+            <select class="input-field">
+              <option>gpt-4o-mini</option>
+              <option>gpt-4o</option>
+              <option>claude-haiku-3.5</option>
+              <option>gemini-2.0-flash</option>
+            </select>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">用于快速数据处理和初步分析</div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">
+              <i class="fas fa-brain" style="color:var(--accent);"></i> Deep-thinking Model
+            </div>
+            <select class="input-field">
+              <option>gpt-4o</option>
+              <option>claude-sonnet-4</option>
+              <option>gemini-2.5-pro</option>
+              <option>deepseek-r1</option>
+            </select>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">用于复杂推理和最终决策</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 8: Confirm -->
+      <div class="step-content" id="step-8" style="display:none;">
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">确认并启动</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">检查配置信息，确认无误后启动分析</p>
+        <div style="background:rgba(148,163,184,0.05);border-radius:12px;padding:20px;display:grid;gap:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">股票代码</span>
+            <span class="font-mono" style="font-weight:600;" id="confirm-ticker">NVDA</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">分析日期</span>
+            <span class="font-mono" style="font-weight:500;">2026-04-23</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">输出语言</span>
+            <span style="font-weight:500;">English</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">分析师团队</span>
+            <span style="font-weight:500;">Market, Social, News, Fundamentals</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">研究深度</span>
+            <span style="font-weight:500;">Medium</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">LLM Provider</span>
+            <span style="font-weight:500;">OpenAI</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">Quick Model</span>
+            <span class="font-mono" style="font-size:13px;">gpt-4o-mini</span>
+          </div>
+          <div style="border-top:1px solid var(--border);"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--text-muted);font-size:14px;">Deep Model</span>
+            <span class="font-mono" style="font-size:13px;">gpt-4o</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step Navigation -->
+    <div style="display:flex;justify-content:space-between;margin-top:24px;">
+      <button class="btn-secondary" id="btn-prev" onclick="prevStep()" style="display:none;">
+        <i class="fas fa-arrow-left"></i> 上一步
+      </button>
+      <div style="flex:1;"></div>
+      <button class="btn-primary" id="btn-next" onclick="nextStep()">
+        下一步 <i class="fas fa-arrow-right" aria-hidden="true"></i>
+      </button>
+      <button class="btn-primary" id="btn-start" onclick="startAnalysis()" style="display:none;" aria-label="启动分析">
+        <i class="fas fa-rocket" aria-hidden="true"></i> 启动分析
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3: LIVE ANALYSIS ==================== -->
+<div id="page-live-analysis" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+      <h1 style="font-size:24px;font-weight:700;margin-bottom:4px;">
+        <span class="font-mono" style="color:var(--accent);">NVDA</span> 实时分析
+      </h1>
+      <p style="color:var(--text-secondary);font-size:13px;">多 Agent 协作分析进行中...</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-secondary" onclick="toggleLivePause()" id="btn-pause" style="padding:8px 16px;" aria-label="暂停分析">
+        <i class="fas fa-pause" aria-hidden="true"></i> 暂停
+      </button>
+      <button class="btn-secondary" style="padding:8px 16px;color:var(--danger);border-color:rgba(239,68,68,0.3);" aria-label="终止分析">
+        <i class="fas fa-stop" aria-hidden="true"></i> 终止
+      </button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
+    <!-- Left: Agent Progress -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <!-- Analyst Team -->
+      <div class="glass-card" style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <i class="fas fa-user-tie" style="color:var(--accent);font-size:14px;"></i>
+          <span style="font-size:14px;font-weight:600;">Analyst Team</span>
+          <span class="agent-status status-completed" style="margin-left:auto;font-size:11px;">4/4</span>
+        </div>
+        <div style="display:grid;gap:8px;" id="analyst-agents">
+          <div class="agent-item" data-agent="market">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#10b981;"></div>
+                <span style="font-size:13px;">Market Analyst</span>
+              </div>
+              <span class="agent-status status-completed" style="font-size:11px;"><i class="fas fa-check" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+          <div class="agent-item" data-agent="social">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#10b981;"></div>
+                <span style="font-size:13px;">Social Media Analyst</span>
+              </div>
+              <span class="agent-status status-completed" style="font-size:11px;"><i class="fas fa-check" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+          <div class="agent-item" data-agent="news">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#10b981;"></div>
+                <span style="font-size:13px;">News Analyst</span>
+              </div>
+              <span class="agent-status status-completed" style="font-size:11px;"><i class="fas fa-check" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+          <div class="agent-item" data-agent="fundamentals">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#10b981;"></div>
+                <span style="font-size:13px;">Fundamentals Analyst</span>
+              </div>
+              <span class="agent-status status-completed" style="font-size:11px;"><i class="fas fa-check" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Research Team -->
+      <div class="glass-card" style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <i class="fas fa-flask" style="color:#818cf8;font-size:14px;"></i>
+          <span style="font-size:14px;font-weight:600;">Research Team</span>
+          <span class="agent-status status-in_progress" style="margin-left:auto;font-size:11px;">2/3</span>
+        </div>
+        <div style="display:grid;gap:8px;">
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#10b981;"></div>
+                <span style="font-size:13px;">Bull Researcher</span>
+              </div>
+              <span class="agent-status status-completed" style="font-size:11px;"><i class="fas fa-check" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#10b981;"></div>
+                <span style="font-size:13px;">Bear Researcher</span>
+              </div>
+              <span class="agent-status status-completed" style="font-size:11px;"><i class="fas fa-check" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#00d4aa;animation:pulse-dot 1.5s infinite;"></div>
+                <span style="font-size:13px;">Research Manager</span>
+              </div>
+              <span class="agent-status status-in_progress" style="font-size:11px;"><i class="fas fa-spinner fa-spin" style="font-size:9px;"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trading Team -->
+      <div class="glass-card" style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <i class="fas fa-exchange-alt" style="color:var(--warning);font-size:14px;"></i>
+          <span style="font-size:14px;font-weight:600;">Trading Team</span>
+          <span class="agent-status status-pending" style="margin-left:auto;font-size:11px;">0/1</span>
+        </div>
+        <div style="display:grid;gap:8px;">
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#64748b;"></div>
+                <span style="font-size:13px;">Trader</span>
+              </div>
+              <span class="agent-status status-pending" style="font-size:11px;">等待中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Management -->
+      <div class="glass-card" style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <i class="fas fa-shield-alt" style="color:#ec4899;font-size:14px;"></i>
+          <span style="font-size:14px;font-weight:600;">Risk Management</span>
+          <span class="agent-status status-pending" style="margin-left:auto;font-size:11px;">0/3</span>
+        </div>
+        <div style="display:grid;gap:8px;">
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#64748b;"></div>
+                <span style="font-size:13px;">Aggressive Risk Analyst</span>
+              </div>
+              <span class="agent-status status-pending" style="font-size:11px;">等待中</span>
+            </div>
+          </div>
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#64748b;"></div>
+                <span style="font-size:13px;">Conservative Risk Analyst</span>
+              </div>
+              <span class="agent-status status-pending" style="font-size:11px;">等待中</span>
+            </div>
+          </div>
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#64748b;"></div>
+                <span style="font-size:13px;">Neutral Risk Analyst</span>
+              </div>
+              <span class="agent-status status-pending" style="font-size:11px;">等待中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Management -->
+      <div class="glass-card" style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <i class="fas fa-briefcase" style="color:#10b981;font-size:14px;"></i>
+          <span style="font-size:14px;font-weight:600;">Portfolio Management</span>
+          <span class="agent-status status-pending" style="margin-left:auto;font-size:11px;">0/1</span>
+        </div>
+        <div style="display:grid;gap:8px;">
+          <div class="agent-item">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="status-dot" style="background:#64748b;"></div>
+                <span style="font-size:13px;">Portfolio Manager</span>
+              </div>
+              <span class="agent-status status-pending" style="font-size:11px;">等待中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Messages + Report Preview -->
+    <div style="display:grid;grid-template-rows:1fr 1fr;gap:20px;">
+      <!-- Message Flow -->
+      <div class="glass-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-stream" style="color:var(--accent);font-size:13px;"></i>
+            <span style="font-size:14px;font-weight:600;">实时消息流</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <span style="font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(99,102,241,0.15);color:#818cf8;cursor:pointer;">Tool</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(0,212,170,0.15);color:var(--accent);cursor:pointer;">Agent</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(245,158,11,0.15);color:var(--warning);cursor:pointer;">Data</span>
+          </div>
+        </div>
+        <div id="message-flow" style="flex:1;overflow-y:auto;padding:12px;display:grid;gap:8px;">
+          <!-- Messages will be injected here -->
+        </div>
+      </div>
+
+      <!-- Report Preview -->
+      <div class="glass-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-file-alt" style="color:var(--warning);font-size:13px;"></i>
+            <span style="font-size:14px;font-weight:600;">报告预览</span>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);">实时更新中...</span>
+        </div>
+        <div id="report-preview" class="report-content" style="flex:1;overflow-y:auto;padding:18px;">
+          <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
+            <i class="fas fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>
+            等待分析数据生成报告...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Status Bar -->
+  <div class="glass-card" style="margin-top:16px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;gap:28px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-robot" style="color:#818cf8;font-size:13px;"></i>
+        <span style="font-size:12px;color:var(--text-muted);">LLM 调用</span>
+        <span class="font-mono" style="font-size:14px;font-weight:600;" id="llm-count">23</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-wrench" style="color:var(--warning);font-size:13px;"></i>
+        <span style="font-size:12px;color:var(--text-muted);">Tool 调用</span>
+        <span class="font-mono" style="font-size:14px;font-weight:600;" id="tool-count">47</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-coins" style="color:var(--accent);font-size:13px;"></i>
+        <span style="font-size:12px;color:var(--text-muted);">Token 用量</span>
+        <span class="font-mono" style="font-size:14px;font-weight:600;" id="token-count">128,450</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-clock" style="color:#ec4899;font-size:13px;"></i>
+        <span style="font-size:12px;color:var(--text-muted);">已用时间</span>
+        <span class="font-mono" style="font-size:14px;font-weight:600;" id="elapsed-time">02:34</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;min-width:200px;">
+      <span style="font-size:12px;color:var(--text-muted);">报告进度</span>
+      <div class="progress-bar" style="flex:1;">
+        <div class="progress-bar-fill" id="report-progress" style="width:45%;"></div>
+      </div>
+      <span class="font-mono" style="font-size:13px;font-weight:600;color:var(--accent);" id="report-pct">45%</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 4: REPORT ==================== -->
+<div id="page-report" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:24px;font-weight:700;margin-bottom:4px;">
+        <span class="font-mono" style="color:var(--accent);">NVDA</span> 分析报告
+      </h1>
+      <p style="color:var(--text-secondary);font-size:13px;">生成时间: 2026-04-22 14:32:18 | 耗时: 4分12秒</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-secondary"><i class="fas fa-file-pdf"></i> 导出 PDF</button>
+      <button class="btn-secondary"><i class="fas fa-file-code"></i> 导出 Markdown</button>
+    </div>
+  </div>
+
+  <!-- Signal Card -->
+  <div class="signal-buy" style="border-radius:16px;padding:28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">最终交易信号</div>
+      <div style="font-size:36px;font-weight:800;color:#10b981;letter-spacing:2px;">BUY</div>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;">NVIDIA Corporation (NVDA)</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">置信度</div>
+      <div class="font-mono" style="font-size:48px;font-weight:700;color:#10b981;">87<span style="font-size:24px;">%</span></div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">建议入场价: $142.50</div>
+    </div>
+  </div>
+
+  <!-- Collapsible Sections -->
+  <div style="display:grid;gap:12px;">
+    <!-- Section I: Analyst Team Reports -->
+    <div class="glass-card" style="overflow:hidden;">
+      <button class="collapsible-header" onclick="toggleCollapse(this)" aria-expanded="true" aria-controls="section-i-body">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;">
+            <span style="font-weight:700;color:var(--accent);font-size:14px;">I</span>
+          </div>
+          <span style="font-weight:600;">Analyst Team Reports</span>
+        </div>
+        <i class="fas fa-chevron-down" style="color:var(--text-muted);transition:transform 0.3s;" aria-hidden="true"></i>
+      </button>
+      <div id="section-i-body" class="collapsible-body open">
+        <div style="padding:0 20px 20px;">
+          <div style="display:flex;gap:6px;margin-bottom:16px;">
+            <button class="tab-btn active" onclick="switchReportTab(this,'tab-market')">Market</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-social')">Social</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-news')">News</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-fund')">Fundamentals</button>
+          </div>
+          <div id="tab-market" class="report-tab-content">
+            <div class="report-content">
+              <h3>Market Analyst Report - NVDA</h3>
+              <p><strong>Technical Overview:</strong> NVDA is currently trading above its 50-day and 200-day moving averages, indicating a strong bullish trend. The RSI stands at 62.4, suggesting the stock is approaching overbought territory but still has room for upward movement.</p>
+              <p><strong>Key Technical Indicators:</strong></p>
+              <ul>
+                <li><strong>MACD:</strong> Bullish crossover confirmed on April 18, with histogram expanding positively</li>
+                <li><strong>Bollinger Bands:</strong> Price trading near upper band, indicating strong momentum</li>
+                <li><strong>Volume:</strong> 45.2M average daily volume, 20% above 30-day average</li>
+                <li><strong>Support/Resistance:</strong> Immediate support at $135.20, resistance at $148.75</li>
+              </ul>
+              <p><strong>Conclusion:</strong> Technical indicators overwhelmingly support a <strong>BUY</strong> signal with a target price of $155-$160 within the next 30 days.</p>
+            </div>
+          </div>
+          <div id="tab-social" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>Social Media Analyst Report - NVDA</h3>
+              <p><strong>Sentiment Analysis:</strong> Social media sentiment for NVDA remains strongly positive across all major platforms.</p>
+              <ul>
+                <li><strong>Twitter/X:</strong> 78% positive sentiment, driven by AI/ML discussion threads</li>
+                <li><strong>Reddit (r/wallstreetbets):</strong> High mention frequency, predominantly bullish calls</li>
+                <li><strong>StockTwits:</strong> Bullish messages outnumber bearish by 4.2:1 ratio</li>
+              </ul>
+              <p><strong>Trending Topics:</strong> Blackwell GPU architecture, AI datacenter demand, sovereign AI initiatives.</p>
+              <p><strong>Conclusion:</strong> Social sentiment strongly supports a <strong>BUY</strong> recommendation.</p>
+            </div>
+          </div>
+          <div id="tab-news" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>News Analyst Report - NVDA</h3>
+              <p><strong>Recent Headlines:</strong></p>
+              <ul>
+                <li>NVIDIA announces next-gen Blackwell Ultra GPU with 2x performance gains</li>
+                <li>Major cloud providers (AWS, Azure, GCP) expand NVIDIA GPU deployments</li>
+                <li>NVIDIA Q1 2027 earnings beat estimates by 12%, revenue guidance raised</li>
+                <li>New partnerships with automotive OEMs for autonomous driving AI</li>
+              </ul>
+              <p><strong>Impact Assessment:</strong> News flow is overwhelmingly positive with no significant negative catalysts identified. The Blackwell Ultra announcement is a major positive catalyst.</p>
+              <p><strong>Conclusion:</strong> News analysis supports a <strong>BUY</strong> recommendation.</p>
+            </div>
+          </div>
+          <div id="tab-fund" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>Fundamentals Analyst Report - NVDA</h3>
+              <p><strong>Financial Metrics:</strong></p>
+              <ul>
+                <li><strong>P/E Ratio:</strong> 42.5x (forward), above sector average of 28x but justified by growth</li>
+                <li><strong>Revenue Growth:</strong> 78% YoY, data center segment up 125%</li>
+                <li><strong>Gross Margin:</strong> 75.2%, expanding from 72.1% in prior quarter</li>
+                <li><strong>Free Cash Flow:</strong> $8.2B, up 65% YoY</li>
+                <li><strong>Debt-to-Equity:</strong> 0.18, very low leverage</li>
+              </ul>
+              <p><strong>Valuation:</strong> While the stock appears expensive on traditional metrics, the exceptional growth rate and expanding margins justify a premium valuation. DCF analysis suggests a fair value of $155-$170.</p>
+              <p><strong>Conclusion:</strong> Fundamentals support a <strong>BUY</strong> with strong conviction.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section II: Research Team Decision -->
+    <div class="glass-card" style="overflow:hidden;">
+      <button class="collapsible-header" onclick="toggleCollapse(this)" aria-expanded="false" aria-controls="section-ii-body">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;">
+            <span style="font-weight:700;color:#818cf8;font-size:14px;">II</span>
+          </div>
+          <span style="font-weight:600;">Research Team Decision</span>
+        </div>
+        <i class="fas fa-chevron-down" style="color:var(--text-muted);transition:transform 0.3s;" aria-hidden="true"></i>
+      </button>
+      <div id="section-ii-body" class="collapsible-body">
+        <div style="padding:0 20px 20px;">
+          <div style="display:flex;gap:6px;margin-bottom:16px;">
+            <button class="tab-btn active" onclick="switchReportTab(this,'tab-bull')">Bull Case</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-bear')">Bear Case</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-manager')">Manager</button>
+          </div>
+          <div id="tab-bull" class="report-tab-content">
+            <div class="report-content">
+              <h3>Bull Research Perspective</h3>
+              <p>NVIDIA's competitive moat in AI/ML accelerators is widening. The Blackwell architecture represents a generational leap in compute density and energy efficiency. With hyperscaler capex commitments exceeding $200B for 2026, NVIDIA is positioned to capture the majority of AI infrastructure spending.</p>
+              <p><strong>Key Bull Arguments:</strong></p>
+              <ul>
+                <li>Dominant market share (>80%) in AI training accelerators</li>
+                <li>CUDA ecosystem creates massive switching costs</li>
+                <li>Software revenue (CUDA, Enterprise AI) growing 3x faster than hardware</li>
+                <li>Sovereign AI initiatives creating new demand verticals</li>
+              </ul>
+              <p><strong>Price Target:</strong> $175 (30% upside)</p>
+            </div>
+          </div>
+          <div id="tab-bear" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>Bear Research Perspective</h3>
+              <p>While NVIDIA's current position is strong, several risks warrant caution. Custom silicon efforts by major cloud providers (Google TPU, AWS Trainium, Microsoft Maia) could erode NVIDIA's market share over the next 2-3 years.</p>
+              <p><strong>Key Bear Arguments:</strong></p>
+              <ul>
+                <li>Valuation premium assumes perpetual hypergrowth which may not materialize</li>
+                <li>Customer concentration risk (top 5 customers = 65% of revenue)</li>
+                <li>Potential export restrictions to China could impact $5-7B in annual revenue</li>
+                <li>Cyclical risk if AI investment cycle slows</li>
+              </ul>
+              <p><strong>Downside Target:</strong> $105 (25% downside)</p>
+            </div>
+          </div>
+          <div id="tab-manager" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>Research Manager Decision</h3>
+              <p>After carefully weighing both the bull and bear perspectives, the Research Manager concludes that the bull case significantly outweighs the bear case for NVDA at current levels.</p>
+              <blockquote>
+                "The combination of NVIDIA's technological leadership, expanding TAM through sovereign AI, and the CUDA ecosystem moat creates a compelling investment case. While valuation is elevated, the growth trajectory justifies the premium. We recommend a BUY with high conviction."
+              </blockquote>
+              <p><strong>Recommendation:</strong> <span style="color:#10b981;font-weight:700;">BUY</span> | <strong>Conviction:</strong> High | <strong>Time Horizon:</strong> 6-12 months</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section III: Trading Team Plan -->
+    <div class="glass-card" style="overflow:hidden;">
+      <button class="collapsible-header" onclick="toggleCollapse(this)" aria-expanded="false" aria-controls="section-iii-body">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;">
+            <span style="font-weight:700;color:var(--warning);font-size:14px;">III</span>
+          </div>
+          <span style="font-weight:600;">Trading Team Plan</span>
+        </div>
+        <i class="fas fa-chevron-down" style="color:var(--text-muted);transition:transform 0.3s;" aria-hidden="true"></i>
+      </button>
+      <div id="section-iii-body" class="collapsible-body">
+        <div style="padding:20px;" class="report-content">
+          <h3>Trading Plan</h3>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0;">
+            <div style="background:rgba(16,185,129,0.08);border-radius:12px;padding:16px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Entry Price</div>
+              <div class="font-mono" style="font-size:22px;font-weight:700;color:#10b981;">$142.50</div>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border-radius:12px;padding:16px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Stop Loss</div>
+              <div class="font-mono" style="font-size:22px;font-weight:700;color:#ef4444;">$128.00</div>
+            </div>
+            <div style="background:rgba(0,212,170,0.08);border-radius:12px;padding:16px;text-align:center;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Take Profit</div>
+              <div class="font-mono" style="font-size:22px;font-weight:700;color:var(--accent);">$165.00</div>
+            </div>
+          </div>
+          <p><strong>Position Sizing:</strong> Recommended 5% of portfolio value. Risk/reward ratio of 1:1.6 (risking $14.50 to gain $22.50).</p>
+          <p><strong>Execution Strategy:</strong> Scale in over 2-3 days using limit orders. Place stop-loss order immediately after first fill.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section IV: Risk Management -->
+    <div class="glass-card" style="overflow:hidden;">
+      <button class="collapsible-header" onclick="toggleCollapse(this)" aria-expanded="false" aria-controls="section-iv-body">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;">
+            <span style="font-weight:700;color:#ec4899;font-size:14px;">IV</span>
+          </div>
+          <span style="font-weight:600;">Risk Management Team Decision</span>
+        </div>
+        <i class="fas fa-chevron-down" style="color:var(--text-muted);transition:transform 0.3s;" aria-hidden="true"></i>
+      </button>
+      <div id="section-iv-body" class="collapsible-body">
+        <div style="padding:0 20px 20px;">
+          <div style="display:flex;gap:6px;margin-bottom:16px;">
+            <button class="tab-btn active" onclick="switchReportTab(this,'tab-aggressive')">Aggressive</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-conservative')">Conservative</button>
+            <button class="tab-btn" onclick="switchReportTab(this,'tab-neutral')">Neutral</button>
+          </div>
+          <div id="tab-aggressive" class="report-tab-content">
+            <div class="report-content">
+              <h3>Aggressive Risk Profile</h3>
+              <p><strong>Position Size:</strong> 8% of portfolio | <strong>Leverage:</strong> None</p>
+              <p><strong>Rationale:</strong> Strong conviction on NVIDIA's growth trajectory justifies an above-average position size. The risk/reward profile is favorable with defined downside protection.</p>
+              <p><strong>Recommendation:</strong> <span style="color:#10b981;font-weight:700;">APPROVE BUY</span> - 8% allocation</p>
+            </div>
+          </div>
+          <div id="tab-conservative" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>Conservative Risk Profile</h3>
+              <p><strong>Position Size:</strong> 3% of portfolio | <strong>Leverage:</strong> None</p>
+              <p><strong>Rationale:</strong> While the thesis is sound, elevated valuation and market concentration risk warrant a smaller position. Prefer to add on pullbacks.</p>
+              <p><strong>Recommendation:</strong> <span style="color:#10b981;font-weight:700;">APPROVE BUY</span> - 3% allocation, add on dips below $135</p>
+            </div>
+          </div>
+          <div id="tab-neutral" class="report-tab-content" style="display:none;">
+            <div class="report-content">
+              <h3>Neutral Risk Profile</h3>
+              <p><strong>Position Size:</strong> 5% of portfolio | <strong>Leverage:</strong> None</p>
+              <p><strong>Rationale:</strong> Balanced approach considering both the strong growth narrative and valuation concerns. A 5% position provides meaningful exposure while maintaining portfolio diversification.</p>
+              <p><strong>Recommendation:</strong> <span style="color:#10b981;font-weight:700;">APPROVE BUY</span> - 5% allocation</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section V: Portfolio Manager -->
+    <div class="glass-card" style="overflow:hidden;">
+      <button class="collapsible-header" onclick="toggleCollapse(this)" aria-expanded="false" aria-controls="section-v-body">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;">
+            <span style="font-weight:700;color:#10b981;font-size:14px;">V</span>
+          </div>
+          <span style="font-weight:600;">Portfolio Manager Decision</span>
+        </div>
+        <i class="fas fa-chevron-down" style="color:var(--text-muted);transition:transform 0.3s;" aria-hidden="true"></i>
+      </button>
+      <div id="section-v-body" class="collapsible-body">
+        <div style="padding:20px;" class="report-content">
+          <h3>Portfolio Manager Final Decision</h3>
+          <blockquote>
+            "After reviewing the comprehensive analysis from all teams, I approve the BUY recommendation for NVDA. The consensus across analysts, researchers, and risk managers is strongly bullish. I will implement a 5% portfolio allocation using the neutral risk profile, with entry at $142.50 and stop-loss at $128.00."
+          </blockquote>
+          <p><strong>Final Decision:</strong> <span style="color:#10b981;font-size:18px;font-weight:700;">BUY</span></p>
+          <p><strong>Confidence Level:</strong> 87% | <strong>Allocation:</strong> 5% of portfolio</p>
+          <p><strong>Next Review Date:</strong> 2026-05-22 (30 days)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 5: HISTORY ==================== -->
+<div id="page-history" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">历史报告</h1>
+      <p style="color:var(--text-secondary);font-size:14px;">查看和管理所有历史分析报告</p>
+    </div>
+    <button class="btn-primary" onclick="switchPage('new-analysis')">
+      <i class="fas fa-plus"></i> 新建分析
+    </button>
+  </div>
+
+  <!-- Search & Filter -->
+  <div class="glass-card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:1fr 200px 200px 160px;gap:12px;align-items:end;">
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">搜索</label>
+        <div style="position:relative;">
+          <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;"></i>
+          <input type="text" class="input-field" placeholder="搜索股票代码或公司名称..." style="padding-left:36px;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">开始日期</label>
+        <input type="date" class="input-field" value="2026-01-01">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">结束日期</label>
+        <input type="date" class="input-field" value="2026-04-23">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">决策类型</label>
+        <select class="input-field">
+          <option>全部</option>
+          <option>BUY</option>
+          <option>HOLD</option>
+          <option>SELL</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Cards -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+    <div class="glass-card" style="padding:20px;cursor:pointer;" onclick="switchPage('report')">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-mono" style="font-size:18px;font-weight:700;">NVDA</span>
+            <span class="badge badge-buy">BUY</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">NVIDIA Corporation</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="font-mono" style="font-size:20px;font-weight:700;color:#10b981;">87%</div>
+          <div style="font-size:11px;color:var(--text-muted);">置信度</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-calendar" style="margin-right:6px;"></i>2026-04-22</span>
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-clock" style="margin-right:6px;"></i>4m 12s</span>
+        <span class="badge badge-completed">已完成</span>
+      </div>
+    </div>
+
+    <div class="glass-card" style="padding:20px;cursor:pointer;" onclick="switchPage('report')">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-mono" style="font-size:18px;font-weight:700;">AAPL</span>
+            <span class="badge badge-hold">HOLD</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Apple Inc</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="font-mono" style="font-size:20px;font-weight:700;color:var(--warning);">62%</div>
+          <div style="font-size:11px;color:var(--text-muted);">置信度</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-calendar" style="margin-right:6px;"></i>2026-04-21</span>
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-clock" style="margin-right:6px;"></i>3m 45s</span>
+        <span class="badge badge-completed">已完成</span>
+      </div>
+    </div>
+
+    <div class="glass-card" style="padding:20px;cursor:pointer;" onclick="switchPage('report')">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-mono" style="font-size:18px;font-weight:700;">TSLA</span>
+            <span class="badge badge-sell">SELL</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Tesla Inc</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="font-mono" style="font-size:20px;font-weight:700;color:var(--danger);">74%</div>
+          <div style="font-size:11px;color:var(--text-muted);">置信度</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-calendar" style="margin-right:6px;"></i>2026-04-20</span>
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-clock" style="margin-right:6px;"></i>5m 08s</span>
+        <span class="badge badge-completed">已完成</span>
+      </div>
+    </div>
+
+    <div class="glass-card" style="padding:20px;cursor:pointer;" onclick="switchPage('report')">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-mono" style="font-size:18px;font-weight:700;">MSFT</span>
+            <span class="badge badge-buy">BUY</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Microsoft Corp</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="font-mono" style="font-size:20px;font-weight:700;color:#10b981;">91%</div>
+          <div style="font-size:11px;color:var(--text-muted);">置信度</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-calendar" style="margin-right:6px;"></i>2026-04-19</span>
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-clock" style="margin-right:6px;"></i>4m 32s</span>
+        <span class="badge badge-completed">已完成</span>
+      </div>
+    </div>
+
+    <div class="glass-card" style="padding:20px;cursor:pointer;" onclick="switchPage('report')">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-mono" style="font-size:18px;font-weight:700;">GOOGL</span>
+            <span class="badge badge-buy">BUY</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Alphabet Inc</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="font-mono" style="font-size:20px;font-weight:700;color:#10b981;">79%</div>
+          <div style="font-size:11px;color:var(--text-muted);">置信度</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-calendar" style="margin-right:6px;"></i>2026-04-18</span>
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-clock" style="margin-right:6px;"></i>3m 58s</span>
+        <span class="badge badge-completed">已完成</span>
+      </div>
+    </div>
+
+    <div class="glass-card" style="padding:20px;cursor:pointer;" onclick="switchPage('report')">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="font-mono" style="font-size:18px;font-weight:700;">AMZN</span>
+            <span class="badge badge-buy">BUY</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Amazon.com Inc</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="font-mono" style="font-size:20px;font-weight:700;color:#10b981;">83%</div>
+          <div style="font-size:11px;color:var(--text-muted);">置信度</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-calendar" style="margin-right:6px;"></i>2026-04-17</span>
+        <span style="font-size:13px;color:var(--text-secondary);"><i class="fas fa-clock" style="margin-right:6px;"></i>4m 45s</span>
+        <span class="badge badge-completed">已完成</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare Button -->
+  <div style="margin-top:20px;text-align:center;">
+    <button class="btn-secondary" style="padding:10px 24px;">
+      <i class="fas fa-columns"></i> 对比分析 (选择 2-4 个报告)
+    </button>
+  </div>
+</div>
+
+<!-- ==================== PAGE 6: SETTINGS ==================== -->
+<div id="page-settings" class="page">
+  <div style="margin-bottom:28px;">
+    <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">系统设置</h1>
+    <p style="color:var(--text-secondary);font-size:14px;">配置 LLM Provider、数据源和用户偏好</p>
+  </div>
+
+  <div style="display:grid;gap:20px;max-width:800px;">
+    <!-- LLM Provider Config -->
+    <div class="glass-card" style="padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <i class="fas fa-brain" style="color:var(--accent);font-size:18px;"></i>
+        <h2 style="font-size:18px;font-weight:600;">LLM Provider 配置</h2>
+      </div>
+      <div style="display:grid;gap:16px;">
+        <div>
+          <label for="openai-api-key" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">OpenAI API Key</label>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="openai-api-key" name="openai-api-key" class="input-field" value="sk-xxxxxxxxxxxxxxxxxxxxxxxx" style="flex:1;" autocomplete="off">
+            <button type="button" class="btn-secondary" style="padding:8px 16px;" aria-label="显示或隐藏 API Key"><i class="fas fa-eye" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div>
+          <label for="google-api-key" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">Google API Key</label>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="google-api-key" name="google-api-key" class="input-field" value="AIzaSyxxxxxxxxxxxxxxxx" style="flex:1;" autocomplete="off">
+            <button type="button" class="btn-secondary" style="padding:8px 16px;" aria-label="显示或隐藏 API Key"><i class="fas fa-eye" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div>
+          <label for="anthropic-api-key" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">Anthropic API Key</label>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="anthropic-api-key" name="anthropic-api-key" class="input-field" placeholder="未设置" style="flex:1;" autocomplete="off">
+            <button type="button" class="btn-secondary" style="padding:8px 16px;" aria-label="显示或隐藏 API Key"><i class="fas fa-eye" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div>
+          <label for="deepseek-api-key" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">DeepSeek API Key</label>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="deepseek-api-key" name="deepseek-api-key" class="input-field" placeholder="未设置" style="flex:1;" autocomplete="off">
+            <button type="button" class="btn-secondary" style="padding:8px 16px;" aria-label="显示或隐藏 API Key"><i class="fas fa-eye" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label for="default-quick-model" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">默认 Quick-thinking 模型</label>
+            <select id="default-quick-model" name="default-quick-model" class="input-field">
+              <option>gpt-4o-mini</option>
+              <option>claude-haiku-3.5</option>
+              <option>gemini-2.0-flash</option>
+            </select>
+          </div>
+          <div>
+            <label for="default-deep-model" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">默认 Deep-thinking 模型</label>
+            <select id="default-deep-model" name="default-deep-model" class="input-field">
+              <option>gpt-4o</option>
+              <option>claude-sonnet-4</option>
+              <option>gemini-2.5-pro</option>
+              <option>deepseek-r1</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Source Config -->
+    <div class="glass-card" style="padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <i class="fas fa-database" style="color:#818cf8;font-size:18px;"></i>
+        <h2 style="font-size:18px;font-weight:600;">数据源配置</h2>
+      </div>
+      <div style="display:grid;gap:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;border:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;margin-bottom:2px;">Yahoo Finance (yfinance)</div>
+            <div style="font-size:13px;color:var(--text-muted);">免费股票数据，延迟 15 分钟</div>
+          </div>
+          <button type="button" class="toggle-switch active" role="switch" aria-checked="true" aria-label="启用 Yahoo Finance 数据源" onclick="this.classList.toggle('active'); this.setAttribute('aria-checked', this.classList.contains('active'))"></button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-radius:12px;border:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;margin-bottom:2px;">Alpha Vantage</div>
+            <div style="font-size:13px;color:var(--text-muted);">高级金融数据 API，实时行情</div>
+          </div>
+          <button type="button" class="toggle-switch" role="switch" aria-checked="false" aria-label="启用 Yahoo Finance 数据源" onclick="this.classList.toggle('active'); this.setAttribute('aria-checked', this.classList.contains('active'))"></button>
+        </div>
+        <div>
+          <label for="alpha-vantage-key" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">Alpha Vantage API Key (可选)</label>
+          <input type="password" id="alpha-vantage-key" name="alpha-vantage-key" class="input-field" placeholder="输入 API Key…" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="glass-card" style="padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <i class="fas fa-bell" style="color:var(--warning);font-size:18px;"></i>
+        <h2 style="font-size:18px;font-weight:600;">通知设置</h2>
+      </div>
+      <div style="display:grid;gap:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;">分析完成通知</div>
+            <div style="font-size:13px;color:var(--text-muted);">分析完成时发送桌面通知</div>
+          </div>
+          <button type="button" class="toggle-switch active" role="switch" aria-checked="true" aria-label="启用分析完成通知" onclick="this.classList.toggle('active'); this.setAttribute('aria-checked', this.classList.contains('active'))"></button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;">声音提醒</div>
+            <div style="font-size:13px;color:var(--text-muted);">分析完成时播放提示音</div>
+          </div>
+          <button type="button" class="toggle-switch" role="switch" aria-checked="false" aria-label="启用声音提醒" onclick="this.classList.toggle('active'); this.setAttribute('aria-checked', this.classList.contains('active'))"></button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;">邮件通知</div>
+            <div style="font-size:13px;color:var(--text-muted);">将报告摘要发送至邮箱</div>
+          </div>
+          <button type="button" class="toggle-switch" role="switch" aria-checked="false" aria-label="启用邮件通知" onclick="this.classList.toggle('active'); this.setAttribute('aria-checked', this.classList.contains('active'))"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Preferences -->
+    <div class="glass-card" style="padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <i class="fas fa-sliders-h" style="color:#ec4899;font-size:18px;"></i>
+        <h2 style="font-size:18px;font-weight:600;">用户偏好</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">默认分析师团队</label>
+          <select class="input-field">
+            <option>全部 (Market + Social + News + Fundamentals)</option>
+            <option>仅技术分析 (Market)</option>
+            <option>基本面分析 (Market + Fundamentals)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">默认研究深度</label>
+          <select class="input-field">
+            <option>Medium (标准分析)</option>
+            <option>Shallow (快速扫描)</option>
+            <option>Deep (深度研究)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">默认输出语言</label>
+          <select class="input-field">
+            <option>English</option>
+            <option>中文</option>
+            <option>日本語</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">默认 LLM Provider</label>
+          <select class="input-field">
+            <option>OpenAI</option>
+            <option>Google</option>
+            <option>Anthropic</option>
+            <option>DeepSeek</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div style="display:flex;justify-content:flex-end;gap:12px;padding-top:8px;">
+      <button class="btn-secondary">重置默认</button>
+      <button class="btn-primary"><i class="fas fa-save"></i> 保存设置</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main-content -->
+
+<script>
+// ========== PAGE SWITCHING ==========
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  // Highlight nav
+  const navMap = { 'dashboard': 0, 'new-analysis': 1, 'live-analysis': 2, 'report': 3, 'history': 4, 'settings': 5 };
+  const idx = navMap[pageId];
+  if (idx !== undefined) {
+    document.querySelectorAll('.nav-item')[idx].classList.add('active');
+  }
+  // Start live simulation when entering live-analysis
+  if (pageId === 'live-analysis') {
+    startLiveSimulation();
+  }
+}
+
+// ========== STEP FORM ==========
+let currentStep = 1;
+const totalSteps = 8;
+
+function updateStepUI() {
+  document.querySelectorAll('.step-content').forEach(s => s.style.display = 'none');
+  document.getElementById('step-' + currentStep).style.display = 'block';
+
+  const dots = document.querySelectorAll('.step-dot');
+  const lines = document.querySelectorAll('.step-line');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'completed');
+    if (i + 1 < currentStep) d.classList.add('completed');
+    else if (i + 1 === currentStep) d.classList.add('active');
+  });
+  lines.forEach((l, i) => {
+    l.classList.toggle('completed', i + 1 < currentStep);
+  });
+
+  document.getElementById('btn-prev').style.display = currentStep > 1 ? 'inline-flex' : 'none';
+  document.getElementById('btn-next').style.display = currentStep < totalSteps ? 'inline-flex' : 'none';
+  document.getElementById('btn-start').style.display = currentStep === totalSteps ? 'inline-flex' : 'none';
+}
+
+function nextStep() {
+  if (currentStep < totalSteps) { currentStep++; updateStepUI(); }
+}
+function prevStep() {
+  if (currentStep > 1) { currentStep--; updateStepUI(); }
+}
+function startAnalysis() {
+  switchPage('live-analysis');
+}
+
+// ========== AUTOCOMPLETE ==========
+const stockList = [
+  { ticker: 'AAPL', name: 'Apple Inc' },
+  { ticker: 'NVDA', name: 'NVIDIA Corp' },
+  { ticker: 'TSLA', name: 'Tesla Inc' },
+  { ticker: 'MSFT', name: 'Microsoft Corp' },
+  { ticker: 'GOOGL', name: 'Alphabet Inc' },
+  { ticker: 'AMZN', name: 'Amazon.com Inc' },
+  { ticker: 'META', name: 'Meta Platforms' },
+  { ticker: 'NFLX', name: 'Netflix Inc' },
+  { ticker: 'AMD', name: 'Advanced Micro Devices' },
+  { ticker: 'BABA', name: 'Alibaba Group' },
+  { ticker: 'JPM', name: 'JPMorgan Chase' },
+  { ticker: 'V', name: 'Visa Inc' },
+];
+
+function showAutocomplete(val) {
+  const list = document.getElementById('autocomplete-list');
+  if (!val) { list.classList.remove('show'); return; }
+  const matches = stockList.filter(s =>
+    s.ticker.toLowerCase().includes(val.toLowerCase()) ||
+    s.name.toLowerCase().includes(val.toLowerCase())
+  );
+  if (matches.length === 0) { list.classList.remove('show'); return; }
+  list.innerHTML = matches.map(s =>
+    `<div class="autocomplete-item" onclick="selectStock('${s.ticker}')">
+      <span class="font-mono" style="font-weight:600;">${s.ticker}</span>
+      <span style="color:var(--text-muted);font-size:13px;">${s.name}</span>
+    </div>`
+  ).join('');
+  list.classList.add('show');
+}
+
+function selectStock(ticker) {
+  document.getElementById('stock-input').value = ticker;
+  document.getElementById('autocomplete-list').classList.remove('show');
+  document.getElementById('confirm-ticker').textContent = ticker;
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#stock-input') && !e.target.closest('.autocomplete-list')) {
+    document.getElementById('autocomplete-list').classList.remove('show');
+  }
+});
+
+// ========== CARD SELECTIONS ==========
+function toggleCheck(el) { el.classList.toggle('selected'); }
+function selectLang(el, lang) {
+  el.parentElement.querySelectorAll('.depth-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectDepth(el, depth) {
+  el.parentElement.querySelectorAll('.depth-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectProvider(el, provider) {
+  el.parentElement.querySelectorAll('.depth-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ========== COLLAPSIBLE ==========
+function toggleCollapse(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.fa-chevron-down');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  if (icon) icon.style.transform = !isOpen ? 'rotate(180deg)' : '';
+  // Update aria-expanded
+  header.setAttribute('aria-expanded', !isOpen);
+}
+
+// ========== REPORT TABS ==========
+function switchReportTab(btn, tabId) {
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const container = btn.closest('.collapsible-body') || btn.closest('div');
+  container.querySelectorAll('.report-tab-content').forEach(t => t.style.display = 'none');
+  document.getElementById(tabId).style.display = 'block';
+}
+
+// ========== LIVE ANALYSIS SIMULATION ==========
+let liveInterval = null;
+let livePaused = false;
+let liveStep = 0;
+
+const liveMessages = [
+  { type: 'tool', agent: 'Market Analyst', text: 'Calling yfinance.get_stock_data("NVDA", period="6mo")...' },
+  { type: 'data', agent: 'System', text: 'Returned 126 data points. Current price: $142.35, Volume: 52.3M' },
+  { type: 'agent', agent: 'Market Analyst', text: 'Analyzing technical indicators: RSI=62.4, MACD=bullish crossover confirmed' },
+  { type: 'tool', agent: 'Market Analyst', text: 'Calling calculate_bollinger_bands(data, period=20)' },
+  { type: 'data', agent: 'System', text: 'Bollinger Bands: Upper=$148.75, Middle=$138.20, Lower=$127.65' },
+  { type: 'agent', agent: 'Market Analyst', text: 'Technical analysis complete. Signal: BUY. Confidence: 82%' },
+  { type: 'tool', agent: 'Social Media Analyst', text: 'Calling fetch_social_sentiment("NVDA", platforms=["twitter","reddit"])' },
+  { type: 'data', agent: 'System', text: 'Fetched 2,847 social media mentions. Positive: 78%, Neutral: 15%, Negative: 7%' },
+  { type: 'agent', agent: 'Social Media Analyst', text: 'Social sentiment strongly bullish. Key topics: AI, Blackwell, datacenter demand' },
+  { type: 'tool', agent: 'News Analyst', text: 'Calling fetch_news("NVDA", days=7, max_articles=20)' },
+  { type: 'data', agent: 'System', text: 'Retrieved 14 news articles. 12 positive, 1 neutral, 1 negative' },
+  { type: 'agent', agent: 'News Analyst', text: 'Major catalyst: Blackwell Ultra announcement. No significant negative news.' },
+  { type: 'tool', agent: 'Fundamentals Analyst', text: 'Calling yfinance.get_financials("NVDA", statements=["income","balance","cashflow"])' },
+  { type: 'data', agent: 'System', text: 'Financial data retrieved. Revenue: $60.9B (TTM), Net Income: $19.3B, FCF: $8.2B' },
+  { type: 'agent', agent: 'Fundamentals Analyst', text: 'Fundamentals strong. P/E 42.5x justified by 78% revenue growth. DCF fair value: $162' },
+  { type: 'agent', agent: 'Bull Researcher', text: 'Building bull case: AI infrastructure spending cycle, CUDA moat, software revenue growth' },
+  { type: 'agent', agent: 'Bull Researcher', text: 'Bull case complete. Price target: $175 (30% upside). Key driver: sovereign AI demand' },
+  { type: 'agent', agent: 'Bear Researcher', text: 'Building bear case: custom silicon risk, valuation premium, China export restrictions' },
+  { type: 'agent', agent: 'Bear Researcher', text: 'Bear case complete. Downside target: $105 (25% downside). Key risk: customer concentration' },
+  { type: 'tool', agent: 'Research Manager', text: 'Calling synthesize_research(bull_report, bear_report, analyst_reports)' },
+  { type: 'agent', agent: 'Research Manager', text: 'Synthesizing research findings. Weighing evidence from all analysts...' },
+  { type: 'agent', agent: 'Research Manager', text: 'Research synthesis complete. Recommendation: BUY with high conviction. Confidence: 87%' },
+  { type: 'agent', agent: 'Trader', text: 'Developing trading plan based on research recommendation...' },
+  { type: 'tool', agent: 'Trader', text: 'Calling calculate_position_size(capital=100000, risk=0.02, entry=142.5, stop=128.0)' },
+  { type: 'data', agent: 'System', text: 'Position sizing: 69 shares ($9,852.50), Risk per share: $14.50, Risk: 2.0%' },
+  { type: 'agent', agent: 'Trader', text: 'Trading plan: Entry $142.50, Stop $128.00, Target $165.00. R:R = 1:1.55' },
+  { type: 'agent', agent: 'Aggressive Risk Analyst', text: 'Evaluating risk with aggressive profile: 8% allocation approved' },
+  { type: 'agent', agent: 'Conservative Risk Analyst', text: 'Evaluating risk with conservative profile: 3% allocation, add on dips' },
+  { type: 'agent', agent: 'Neutral Risk Analyst', text: 'Evaluating risk with neutral profile: 5% allocation recommended' },
+  { type: 'agent', agent: 'Portfolio Manager', text: 'Reviewing all team recommendations and risk assessments...' },
+  { type: 'agent', agent: 'Portfolio Manager', text: 'Final decision: BUY NVDA at $142.50. Allocation: 5%. Confidence: 87%' },
+];
+
+const reportSections = [
+  '# Market Analyst Report\n\n**NVDA Technical Analysis**\n\n- RSI: 62.4 (approaching overbought but healthy)\n- MACD: Bullish crossover confirmed\n- Bollinger Bands: Trading near upper band\n- Volume: 52.3M (20% above average)\n\n**Signal: BUY** | Confidence: 82%',
+  '# Social Media Analyst Report\n\n**Sentiment Summary:**\n- Positive: 78% | Neutral: 15% | Negative: 7%\n- Total mentions: 2,847 (last 7 days)\n\n**Trending Topics:** Blackwell GPU, AI datacenter, sovereign AI\n\n**Signal: BUY** | Confidence: 85%',
+  '# News Analyst Report\n\n**14 articles analyzed (12 positive, 1 neutral, 1 negative)**\n\nKey headlines:\n- Blackwell Ultra GPU announcement\n- Cloud providers expanding GPU deployments\n- Q1 earnings beat by 12%\n\n**Signal: BUY** | Confidence: 90%',
+  '# Fundamentals Analyst Report\n\n- P/E: 42.5x (forward)\n- Revenue Growth: 78% YoY\n- Gross Margin: 75.2%\n- FCF: $8.2B\n- DCF Fair Value: $162\n\n**Signal: BUY** | Confidence: 84%',
+  '# Research Team Decision\n\n## Bull Case\nPrice Target: $175 (+30%)\nKey drivers: AI spending, CUDA moat, software growth\n\n## Bear Case\nDownside: $105 (-25%)\nKey risks: Custom silicon, valuation, China restrictions\n\n## Manager Decision\n**BUY** with high conviction | Confidence: 87%',
+  '# Trading Plan\n\n| Metric | Value |\n|--------|-------|\n| Entry | $142.50 |\n| Stop Loss | $128.00 |\n| Take Profit | $165.00 |\n| Position Size | 5% |\n| Risk/Reward | 1:1.55 |',
+  '# Risk Management\n\n| Profile | Allocation | Decision |\n|---------|-----------|----------|\n| Aggressive | 8% | BUY |\n| Conservative | 3% | BUY |\n| Neutral | 5% | BUY |\n\nAll risk profiles approve the BUY recommendation.',
+  '# Portfolio Manager Decision\n\n> "I approve the BUY recommendation for NVDA with 5% portfolio allocation."\n\n**Final Signal: BUY**\n**Confidence: 87%**\n**Next Review: 2026-05-22**',
+];
+
+function formatTime() {
+  const now = new Date();
+  return now.toTimeString().split(' ')[0];
+}
+
+function addMessage(msg) {
+  const flow = document.getElementById('message-flow');
+  const div = document.createElement('div');
+  div.className = 'msg-item msg-' + msg.type;
+  const icon = msg.type === 'tool' ? 'fa-wrench' : msg.type === 'agent' ? 'fa-robot' : msg.type === 'data' ? 'fa-database' : 'fa-info-circle';
+  div.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+    <span style="font-weight:600;font-size:12px;color:${msg.type==='tool'?'#818cf8':msg.type==='agent'?'var(--accent)':msg.type==='data'?'var(--warning)':'var(--text-muted)'}">
+      <i class="fas ${icon}" style="margin-right:4px;"></i>${msg.agent}
+    </span>
+    <span class="font-mono" style="font-size:11px;color:var(--text-muted);">${formatTime()}</span>
+  </div>
+  <div style="color:var(--text-secondary);font-size:13px;">${msg.text}</div>`;
+  flow.appendChild(div);
+  flow.scrollTop = flow.scrollHeight;
+}
+
+function updateReportPreview() {
+  const preview = document.getElementById('report-preview');
+  const sectionIdx = Math.min(Math.floor(liveStep / 4), reportSections.length - 1);
+  let content = reportSections.slice(0, sectionIdx + 1).join('\n\n---\n\n');
+  // Simple markdown-like rendering
+  content = content
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^---$/gm, '<hr style="border-color:var(--border);margin:16px 0;">');
+  preview.innerHTML = '<div class="report-content">' + content + '</div>';
+  preview.scrollTop = preview.scrollHeight;
+}
+
+function updateStats() {
+  const llm = Math.min(23 + liveStep * 2, 85);
+  const tool = Math.min(47 + liveStep * 3, 180);
+  const token = Math.min(128450 + liveStep * 15200, 650000);
+  const mins = Math.floor((154 + liveStep * 12) / 60);
+  const secs = (154 + liveStep * 12) % 60;
+  const progress = Math.min(45 + liveStep * 3.5, 100);
+
+  document.getElementById('llm-count').textContent = llm;
+  document.getElementById('tool-count').textContent = tool;
+  document.getElementById('token-count').textContent = token.toLocaleString();
+  document.getElementById('elapsed-time').textContent =
+    String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  document.getElementById('report-progress').style.width = progress + '%';
+  document.getElementById('report-pct').textContent = Math.round(progress) + '%';
+}
+
+function startLiveSimulation() {
+  if (liveInterval) clearInterval(liveInterval);
+  liveStep = 0;
+  livePaused = false;
+  document.getElementById('message-flow').innerHTML = '';
+  document.getElementById('report-preview').innerHTML =
+    '<div style="text-align:center;padding:40px 0;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>等待分析数据生成报告...</div>';
+
+  liveInterval = setInterval(() => {
+    if (livePaused || liveStep >= liveMessages.length) {
+      if (liveStep >= liveMessages.length) {
+        clearInterval(liveInterval);
+        document.getElementById('report-pct').textContent = '100%';
+        document.getElementById('report-progress').style.width = '100%';
+      }
+      return;
+    }
+    addMessage(liveMessages[liveStep]);
+    updateReportPreview();
+    updateStats();
+    liveStep++;
+  }, 1800);
+}
+
+function toggleLivePause() {
+  livePaused = !livePaused;
+  const btn = document.getElementById('btn-pause');
+  btn.innerHTML = livePaused
+    ? '<i class="fas fa-play"></i> 继续'
+    : '<i class="fas fa-pause"></i> 暂停';
+}
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', () => {
+  updateStepUI();
+});
+</script>
+</body>
+</html>

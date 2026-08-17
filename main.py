@@ -10,9 +10,9 @@ load_dotenv()
 config = DEFAULT_CONFIG.copy()
 config["llm_provider"] = "deepseek"
 config['output_language'] = ""
-config["backend_url"] = "https://api.deepseek.com/v1"
-config["deep_think_llm"] = "deepseek-reasoner"  # Use a different model
-config["quick_think_llm"] = "deepseek-chat"  # Use a different model
+config["backend_url"] = "https://api.deepseek.com/"
+config["deep_think_llm"] = "deepseek-v4-flash"  # Use a different model
+config["quick_think_llm"] = "deepseek-v4-pro"  # Use a different model
 config["max_debate_rounds"] = 1  # Increase debate rounds
 
 selections = {
@@ -22,8 +22,8 @@ selections = {
     "research_depth": 3,
     "llm_provider": "deepseek",
     "backend_url": "https://api.deepseek.com",
-    "shallow_thinker": "deepseek-chat",
-    "deep_thinker": "deepseek-reasoner",
+    "shallow_thinker": "deepseek-v4-pro",
+    "deep_thinker": "deepseek-v4-flash",
     "google_thinking_level": None,
     "openai_reasoning_effort": None,
     "anthropic_effort": None,
